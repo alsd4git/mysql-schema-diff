@@ -1,17 +1,25 @@
-# sqlcompare
-simple shell script to compare two SQL create tables
+# MySQL Schema Diff
 
+Normalize and compare two MySQL `CREATE TABLE` dumps from the command line.
 
-to start:
+## Requirements
+
+- Bash
+- `diff` (or optionally `icdiff` / Meld for the corresponding output modes)
+
+## Usage
+
 ```sh
-git clone https://github.com/alsd4git/sqlcompare
-cd sqlcompare
+git clone https://github.com/alsd4git/mysql-schema-diff.git
+cd mysql-schema-diff
 chmod +x SqlCompare.sh
+./SqlCompare.sh old_db.sql new_db.sql 1
 ```
 
-I usually just use it with 
-```sh
-sh SqlCompare.sh old_db.sql new_db.sql 1
-```
+Run `./SqlCompare.sh -h` for the supported comparison modes. The script was
+originally written with Git Bash on Windows and should also work with a regular
+Bash environment.
 
-this script was written on a windows machine using git bash, but it should work on plain bash with no problems, you can use ```"SqlCompare.sh -h``` to get a simple help
+## License
+
+MIT. See [LICENSE](LICENSE).
