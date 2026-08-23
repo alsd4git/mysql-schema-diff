@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -euo pipefail
+
 #thanks to https://www.shellcheck.net/ for spell checking
 
 usage="
@@ -44,13 +46,23 @@ if [ ! -f "$2" ]; then
 	exit 1
 fi
 
-#cleaning sql create table here
-cat "$1" | grep -v '^/\*\|^$\|^-- \|^  CONSTRAINT' | sed -e '/ENGINE=/c\);\n' -e 's/ COMMENT.*$//' -e '/^$/d' > clean_"$1"
-cat "$2" | grep -v '^/\*\|^$\|^-- \|^  CONSTRAINT' | sed -e '/ENGINE=/c\);\n' -e 's/ COMMENT.*$//' -e '/^$/d' > clean_"$2"
+# Clean SQL dumps with POSIX awk so the same normalization works with GNU and
+# BSD userlands.
+clean_dump() {
+    awk '
+        !/^\/\*/ && NF && !/^-- / && !/^  CONSTRAINT/ {
+            if (/ENGINE=/) {
+                print ");"
+                next
+            }
+            sub(/ COMMENT.*$/, "")
+            if (NF) print
+        }
+    ' "$1"
+}
 
-#sed '/ENGINE=/c\);\n' replace any line that contains '/ENGINE=' with ');\n'
-#sed 's/ COMMENT.*$//' removed everything in the line after ' COMMENT' with that string included
-#'\|' is a separator to be used as "OR"
+clean_dump "$1" >"clean_$1"
+clean_dump "$2" >"clean_$2"
 
 
 if  ! cmp -s clean_"$1" clean_"$2" ; then
@@ -78,5 +90,5 @@ if  ! cmp -s clean_"$1" clean_"$2" ; then
 			;;
 	esac
 else
-	echo -e '\n\tsame (clean) content, nothing to show'
+	printf '\n\tsame (clean) content, nothing to show\n'
 fi
