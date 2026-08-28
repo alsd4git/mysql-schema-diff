@@ -1,5 +1,8 @@
 # MySQL Schema Diff
 
+[![CI](https://github.com/alsd4git/mysql-schema-diff/actions/workflows/ci.yml/badge.svg)](https://github.com/alsd4git/mysql-schema-diff/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+
 Normalize and compare two MySQL `CREATE TABLE` dumps from the command line.
 
 The script removes dump comments, blank lines, table constraints, and selected
