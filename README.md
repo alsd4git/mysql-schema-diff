@@ -5,9 +5,11 @@
 
 Normalize and compare two MySQL `CREATE TABLE` dumps from the command line.
 
-The script removes dump comments, blank lines, table constraints, and selected
-storage-engine details before sending the normalized files to `diff`, `icdiff`,
-or Meld. It does not connect to MySQL or modify the input files.
+The script removes lines that start with `/*` or `-- `, blank lines, lines
+starting with two spaces and `CONSTRAINT`, and text from ` COMMENT` onward on a
+column line. It replaces any line containing `ENGINE=` with `);` before sending
+the normalized files to `diff`, `icdiff`, or Meld. It does not connect to MySQL
+or modify the input files.
 
 ## Requirements
 
@@ -39,14 +41,42 @@ command syntax.
 ## Example
 
 ```bash
-mysqldump --no-data app_before > before.sql
-mysqldump --no-data app_after > after.sql
-./SqlCompare.sh before.sql after.sql 1
+cat > before.sql <<'SQL'
+CREATE TABLE `accounts` (
+  `id` int NOT NULL,
+  `email` varchar(128) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+SQL
+
+cat > after.sql <<'SQL'
+CREATE TABLE `accounts` (
+  `id` int NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `created_at` timestamp NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+SQL
+
+./SqlCompare.sh before.sql after.sql 3
 ```
 
-The command writes `clean_before.sql` and `clean_after.sql` beside the inputs.
-Review and remove those generated files after the comparison. Normalization does
-not prove that a migration is safe or reversible.
+The diff shows that `email` changed from `varchar(128)` to `varchar(255)` and
+that `created_at` was added. The command writes `clean_before.sql` and
+`clean_after.sql` beside the input files. Review and remove them after the
+comparison. `diff` exits with status 1 when it finds these expected differences.
+
+These rules can hide differences in comments, blank lines, matching constraint
+lines, column comments, and any text on an `ENGINE=` line. The script only
+compares the text that remains. It does not parse SQL, check migration safety,
+or prove that a schema change is reversible.
+
+To regenerate the terminal preview below, run `python3 demo/generate-preview.py`.
+The script creates both input dumps in a temporary directory, runs mode 3, and
+writes an SVG. It needs only Python 3's standard library and the commands listed
+under [Requirements](#requirements).
+
+![Terminal preview of a synthetic schema diff](docs/schema-diff.svg)
 
 ## Development
 
