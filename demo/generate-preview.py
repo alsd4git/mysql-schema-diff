@@ -55,9 +55,8 @@ def run_comparison() -> str:
     return result.stdout
 
 
-def colored_spans(line: str) -> str:
+def colored_spans(line: str, current_color: str) -> tuple[str, str]:
     parts: list[str] = []
-    current_color = "#cdd6f4"
     position = 0
     for match in ANSI.finditer(line):
         parts.append(
@@ -67,7 +66,7 @@ def colored_spans(line: str) -> str:
         current_color = next((COLORS[code] for code in codes if code in COLORS), "#cdd6f4")
         position = match.end()
     parts.append(f'<tspan fill="{current_color}">{html.escape(line[position:])}</tspan>')
-    return "".join(parts)
+    return "".join(parts), current_color
 
 
 def render_svg(output: str) -> str:
@@ -77,11 +76,15 @@ def render_svg(output: str) -> str:
     lines = ["$ bash SqlCompare.sh before.sql after.sql 3", *diff_lines]
     line_height = 24
     height = 48 + (len(lines) * line_height) + 18
-    rendered_lines = "\n".join(
-        f'<text x="24" y="{70 + index * line_height}" xml:space="preserve">'
-        f"{colored_spans(line)}</text>"
-        for index, line in enumerate(lines)
-    )
+    rendered_lines: list[str] = []
+    current_color = "#cdd6f4"
+    for index, line in enumerate(lines):
+        spans, current_color = colored_spans(line, current_color)
+        rendered_lines.append(
+            f'<text x="24" y="{70 + index * line_height}" xml:space="preserve">'
+            f"{spans}</text>"
+        )
+    rendered_markup = "\n".join(rendered_lines)
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="{height}" viewBox="0 0 800 {height}" role="img" aria-labelledby="title description">
   <title id="title">SqlCompare.sh terminal diff preview</title>
   <desc id="description">A synthetic mode 3 comparison shows an email column width change and a new created_at column.</desc>
@@ -92,7 +95,7 @@ def render_svg(output: str) -> str:
   <circle cx="62" cy="23" r="6" fill="#a6e3a1"/>
   <text x="400" y="28" text-anchor="middle" fill="#bac2de" font-family="Arial, sans-serif" font-size="13">SqlCompare.sh</text>
   <g fill="#cdd6f4" font-family="SFMono-Regular, Consolas, monospace" font-size="14">
-{rendered_lines}
+{rendered_markup}
   </g>
 </svg>
 '''

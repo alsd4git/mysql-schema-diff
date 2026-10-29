@@ -12,8 +12,8 @@
 <text x="24" y="94" xml:space="preserve"><tspan fill="#cdd6f4">3 - will use basic diff</tspan></text>
 <text x="24" y="118" xml:space="preserve"><tspan fill="#cdd6f4">3c3,4</tspan></text>
 <text x="24" y="142" xml:space="preserve"><tspan fill="#cdd6f4"></tspan><tspan fill="#f38ba8">&lt;   `email` varchar(128) NOT NULL,</tspan></text>
-<text x="24" y="166" xml:space="preserve"><tspan fill="#cdd6f4"></tspan><tspan fill="#cdd6f4">---</tspan></text>
+<text x="24" y="166" xml:space="preserve"><tspan fill="#f38ba8"></tspan><tspan fill="#cdd6f4">---</tspan></text>
 <text x="24" y="190" xml:space="preserve"><tspan fill="#cdd6f4"></tspan><tspan fill="#a6e3a1">&gt;   `email` varchar(255) NOT NULL,</tspan></text>
-<text x="24" y="214" xml:space="preserve"><tspan fill="#cdd6f4">&gt;   `created_at` timestamp NULL,</tspan></text>
+<text x="24" y="214" xml:space="preserve"><tspan fill="#a6e3a1">&gt;   `created_at` timestamp NULL,</tspan></text>
   </g>
 </svg>
