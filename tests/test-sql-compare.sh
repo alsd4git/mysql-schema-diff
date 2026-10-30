@@ -48,6 +48,10 @@ run_status 2 "$old" "$new" 3 extra
 run_status 2 "$old" "$temporary_directory/missing.sql"
 run_status 0 "$old" "$new"
 grep -q 'same (clean) content' "$temporary_directory/stdout"
+if command -v cygpath >/dev/null 2>&1; then
+    run_status 0 "$(cygpath -m "$old")" "$(cygpath -m "$new")"
+    run_status 0 "$(cygpath -w "$old")" "$(cygpath -w "$new")"
+fi
 cmp "$temporary_directory/old.sql" "$old"
 cmp "$temporary_directory/new.sql" "$new"
 [[ ! -e "$temporary_directory/clean_old.sql" ]]
@@ -57,6 +61,9 @@ cmp "$temporary_directory/new.sql" "$new"
 printf '\nCREATE TABLE second_table (id int);\n' >>"$new"
 run_status 1 "$old" "$new"
 grep -q second_table "$temporary_directory/stdout"
+if command -v cygpath >/dev/null 2>&1; then
+    run_status 1 "$(cygpath -m "$old")" "$(cygpath -w "$new")"
+fi
 run_status 1 "$old" "$new" 4
 grep -q second_table "$temporary_directory/stdout"
 (

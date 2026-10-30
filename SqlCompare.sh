@@ -30,10 +30,15 @@ esac
 
 # Absolute paths prevent leading dashes and awk name=value operands from
 # being interpreted as options or assignments instead of input filenames.
-old_file=$1
-new_file=$2
-[[ $old_file == /* ]] || old_file="$PWD/$old_file"
-[[ $new_file == /* ]] || new_file="$PWD/$new_file"
+input_files=("$1" "$2")
+for index in 0 1; do
+    case ${input_files[index]} in
+        /*|[[:alpha:]]:[/\\]*) ;;
+        *) input_files[index]="$PWD/${input_files[index]}" ;;
+    esac
+done
+old_file=${input_files[0]}
+new_file=${input_files[1]}
 for input in "$old_file" "$new_file"; do
     [[ -f $input && -r $input ]] || die "Input must be a readable file: $input"
 done

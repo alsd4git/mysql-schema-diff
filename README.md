@@ -94,7 +94,8 @@ shellcheck SqlCompare.sh tests/test-sql-compare.sh
 ./tests/test-sql-compare.sh
 ```
 
-GitHub Actions runs the smoke tests on Linux and macOS.
+GitHub Actions runs the regression tests on Linux, macOS and Windows Git Bash,
+including Windows drive-letter input paths.
 
 ## License
 
