@@ -1,53 +1,63 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-#thanks to https://www.shellcheck.net/ for spell checking
+usage() {
+    printf 'Usage: %s OLD.sql NEW.sql [MODE]\n' "${0##*/}"
+    printf '%s\n' \
+        'Normalize and compare MySQL CREATE TABLE dumps without changing inputs.' \
+        'Modes: 1 = icdiff, 2 = Meld, 3 = diff (default), 4 = side-by-side diff.' \
+        'Exit codes: 0 = equal, 1 = different, 2 = invalid input or command failure.'
+}
 
-usage="
-$(basename "$0") [-h] [oldFile newFile diffType] -- program to clean and compare two SQL create table
+die() {
+    printf 'Error: %s\n' "$*" >&2
+    exit 2
+}
 
-where:
-	-h  show this help text
-	oldFile: name of the old SQL create table
-	newFile: name of the new SQL create table
-	diffType: value between 1 and 4 where:
-		1) use icdiff (python) if installed, can get with 'pip install git+https://github.com/jeffkaufman/icdiff.git'
-		2) use meld (windows) if used with git bash, you need windows version of meld installed in x86 program folder
-		3) use standard diff with default coloring
-		4) use standard diff with some grep colors
-"
+if [[ $# == 1 && ( $1 == -h || $1 == --help ) ]]; then
+    usage
+    exit 0
+fi
+if [[ $# -lt 2 || $# -gt 3 ]]; then
+    usage >&2
+    exit 2
+fi
+mode=${3:-3}
+case "$mode" in
+    1|2|3|4) ;;
+    *) die 'Mode must be 1, 2, 3 or 4' ;;
+esac
 
-if [ "$1" = "-h" ]; then
-  echo "$usage"
-  exit 0
+# Absolute paths prevent leading dashes and awk name=value operands from
+# being interpreted as options or assignments instead of input filenames.
+old_file=$1
+new_file=$2
+[[ $old_file == /* ]] || old_file="$PWD/$old_file"
+[[ $new_file == /* ]] || new_file="$PWD/$new_file"
+for input in "$old_file" "$new_file"; do
+    [[ -f $input && -r $input ]] || die "Input must be a readable file: $input"
+done
+for tool in awk cmp diff mktemp; do
+    command -v "$tool" >/dev/null 2>&1 || die "Required command not found: $tool"
+done
+if [[ $mode == 1 ]]; then
+    command -v icdiff >/dev/null 2>&1 || die 'Mode 1 requires icdiff'
+elif [[ $mode == 2 ]]; then
+    if command -v meld >/dev/null 2>&1; then
+        meld_command=meld
+    else
+        meld_command='/c/Program Files (x86)/Meld/Meld.exe'
+        [[ -x $meld_command ]] || die 'Mode 2 requires meld on PATH or the Windows Meld installation'
+    fi
 fi
 
-if [ -z "$1" ]; then
-    echo "Warn: missing old file name, will use 'old_DB.sql'"
-	#$1='old_DB.sql'
-	#to edit passed value you need to set them all
-	set -- 'old_DB.sql' "${@:2:3}"
-fi
+umask 077
+temporary_directory=$(mktemp -d "${TMPDIR:-/tmp}/mysql-schema-diff.XXXXXXXX") || die 'Cannot create temporary directory'
+trap 'rm -rf -- "$temporary_directory"' EXIT
+trap 'exit 2' HUP INT TERM
+normalized_old="$temporary_directory/old.sql"
+normalized_new="$temporary_directory/new.sql"
 
-if [ -z "$2" ]; then
-    echo "Warn: missing new file name, will use 'new_DB.sql'"
-	#$2='new_DB.sql'
-	#to edit passed value you need to set them all
-	set -- "${@:1}" 'new_DB.sql' "${@:3}"
-fi
-
-if [ ! -f "$1" ]; then
-    echo "File $1 not found! use \"$(basename "$0") -h\" for script usage"
-	exit 1
-fi
-
-if [ ! -f "$2" ]; then
-    echo "File $2 not found! use \"$(basename "$0") -h\" for script usage"
-	exit 1
-fi
-
-# Clean SQL dumps with POSIX awk so the same normalization works with GNU and
-# BSD userlands.
 clean_dump() {
     awk '
         !/^\/\*/ && NF && !/^-- / && !/^  CONSTRAINT/ {
@@ -60,35 +70,42 @@ clean_dump() {
         }
     ' "$1"
 }
+clean_dump "$old_file" >"$normalized_old" || die 'Cannot normalize old dump'
+clean_dump "$new_file" >"$normalized_new" || die 'Cannot normalize new dump'
 
-clean_dump "$1" >"clean_$1"
-clean_dump "$2" >"clean_$2"
-
-
-if  ! cmp -s clean_"$1" clean_"$2" ; then
-	#files are different
-	case $3 in
-		1)
-			echo '1 - will use icdiff (python)'
-			icdiff clean_"$1" clean_"$2" --cols=160 -W
-			;;
-		2)
-			echo '2 - will use meld (windows)'
-			'C:\Program Files (x86)\Meld\meld.exe' clean_"$1" clean_"$2" &
-			;;
-		3)
-			echo '3 - will use basic diff'
-			diff clean_"$1" clean_"$2" --color=always
-			;;
-		4)
-			echo '4 - will use diff with colored grep'
-			diff -y clean_"$1" clean_"$2" | GREP_COLOR='01;32' grep -E --color=always '.*>.*|$' | GREP_COLOR='01;31' grep -E --color=always '.*<.*|$' | GREP_COLOR='01;36' grep -E --color=always '.*\|.*|$' | less -R
-			;;
-		*)
-			echo 'no option/invalid option provided will use diff with colored grep'
-			diff -y clean_"$1" clean_"$2" | GREP_COLOR='01;32' grep -E --color=always '.*>.*|$' | GREP_COLOR='01;31' grep -E --color=always '.*<.*|$' | GREP_COLOR='01;36' grep -E --color=always '.*\|.*|$' | less -R
-			;;
-	esac
+if cmp -s "$normalized_old" "$normalized_new"; then
+    printf '\n\tsame (clean) content, nothing to show\n'
+    exit 0
 else
-	printf '\n\tsame (clean) content, nothing to show\n'
+    status=$?
+    [[ $status == 1 ]] || die 'Cannot compare normalized dumps'
 fi
+
+case "$mode" in
+    1)
+        if icdiff --cols=160 -W "$normalized_old" "$normalized_new"; then
+            status=0
+        else
+            status=$?
+        fi
+        [[ $status -le 1 ]] || die 'icdiff failed'
+        ;;
+    2)
+        # Wait for the GUI to close before removing its input files.
+        "$meld_command" "$normalized_old" "$normalized_new" || die 'Meld failed'
+        ;;
+    3|4)
+        diff_options=(-a)
+        if diff --color=never /dev/null /dev/null >/dev/null 2>&1; then
+            diff_options+=(--color=always)
+        fi
+        [[ $mode != 4 ]] || diff_options+=(-y)
+        if diff "${diff_options[@]}" "$normalized_old" "$normalized_new"; then
+            status=0
+        else
+            status=$?
+        fi
+        [[ $status -le 1 ]] || die 'diff failed'
+        ;;
+esac
+exit 1

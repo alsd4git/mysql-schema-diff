@@ -14,7 +14,7 @@ or modify the input files.
 ## Requirements
 
 - Bash
-- `awk`, `sed`, and `diff`
+- `awk`, `cmp`, `diff`, and `mktemp`
 - optional: `icdiff` or Meld for the corresponding output mode
 
 The script works in a regular Linux or macOS Bash environment and in Git Bash
@@ -28,15 +28,24 @@ cd mysql-schema-diff
 ./SqlCompare.sh old-schema.sql new-schema.sql MODE
 ```
 
-`MODE` selects the comparison program. Run `./SqlCompare.sh -h` for the current
-command syntax.
+`MODE` selects the comparison program and defaults to `3`. Run
+`./SqlCompare.sh -h` or `--help` for the command syntax. Both input paths are
+required. Absolute paths, spaces and filenames beginning with `-` are supported.
 
 | Mode | Output |
 | --- | --- |
 | `1` | colored terminal output through `icdiff` |
-| `2` | Windows Meld installed under `Program Files (x86)` |
-| `3` | standard `diff` with color |
-| `4` | side-by-side `diff` filtered through colored `grep` |
+| `2` | `meld` on PATH, or Windows Meld under `Program Files (x86)` in Git Bash |
+| `3` | standard `diff`, with color when supported |
+| `4` | side-by-side `diff`, with color when supported |
+
+Terminal output is non-interactive. Meld runs in the foreground; temporary
+inputs are kept until its command exits. Modes `1` and `2` require
+their optional tool even if the normalized files turn out to be equal.
+
+Exit codes are `0` for equal normalized schemas, `1` for differences and `2` for
+invalid input, missing tools or command failures. GUI mode also returns `1` when
+the inputs differ; it does not use edits made inside Meld to redefine equality.
 
 ## Example
 
@@ -62,9 +71,9 @@ SQL
 ```
 
 The diff shows that `email` changed from `varchar(128)` to `varchar(255)` and
-that `created_at` was added. The command writes `clean_before.sql` and
-`clean_after.sql` beside the input files. Review and remove them after the
-comparison. `diff` exits with status 1 when it finds these expected differences.
+that `created_at` was added. Normalized files are private temporary copies,
+removed when the command exits. No `clean_*` files are written alongside the
+inputs. Exit status `1` means these expected differences, not a command failure.
 
 These rules can hide differences in comments, blank lines, matching constraint
 lines, column comments, and any text on an `ENGINE=` line. The script only

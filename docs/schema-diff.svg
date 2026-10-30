@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="234" viewBox="0 0 800 234" role="img" aria-labelledby="title description">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="210" viewBox="0 0 800 210" role="img" aria-labelledby="title description">
   <title id="title">SqlCompare.sh terminal diff preview</title>
   <desc id="description">A synthetic mode 3 comparison shows an email column width change and a new created_at column.</desc>
-  <rect width="800" height="234" rx="12" fill="#181825"/>
+  <rect width="800" height="210" rx="12" fill="#181825"/>
   <path d="M12 0h776a12 12 0 0 1 12 12v34H0V12A12 12 0 0 1 12 0Z" fill="#313244"/>
   <circle cx="22" cy="23" r="6" fill="#f38ba8"/>
   <circle cx="42" cy="23" r="6" fill="#f9e2af"/>
@@ -9,11 +9,10 @@
   <text x="400" y="28" text-anchor="middle" fill="#bac2de" font-family="Arial, sans-serif" font-size="13">SqlCompare.sh</text>
   <g fill="#cdd6f4" font-family="SFMono-Regular, Consolas, monospace" font-size="14">
 <text x="24" y="70" xml:space="preserve"><tspan fill="#cdd6f4">$ bash SqlCompare.sh before.sql after.sql 3</tspan></text>
-<text x="24" y="94" xml:space="preserve"><tspan fill="#cdd6f4">3 - will use basic diff</tspan></text>
-<text x="24" y="118" xml:space="preserve"><tspan fill="#cdd6f4">3c3,4</tspan></text>
-<text x="24" y="142" xml:space="preserve"><tspan fill="#cdd6f4"></tspan><tspan fill="#f38ba8">&lt;   `email` varchar(128) NOT NULL,</tspan></text>
-<text x="24" y="166" xml:space="preserve"><tspan fill="#f38ba8"></tspan><tspan fill="#cdd6f4">---</tspan></text>
-<text x="24" y="190" xml:space="preserve"><tspan fill="#cdd6f4"></tspan><tspan fill="#a6e3a1">&gt;   `email` varchar(255) NOT NULL,</tspan></text>
-<text x="24" y="214" xml:space="preserve"><tspan fill="#a6e3a1">&gt;   `created_at` timestamp NULL,</tspan></text>
+<text x="24" y="94" xml:space="preserve"><tspan fill="#cdd6f4">3c3,4</tspan></text>
+<text x="24" y="118" xml:space="preserve"><tspan fill="#cdd6f4"></tspan><tspan fill="#f38ba8">&lt;   `email` varchar(128) NOT NULL,</tspan></text>
+<text x="24" y="142" xml:space="preserve"><tspan fill="#f38ba8"></tspan><tspan fill="#cdd6f4">---</tspan></text>
+<text x="24" y="166" xml:space="preserve"><tspan fill="#cdd6f4"></tspan><tspan fill="#a6e3a1">&gt;   `email` varchar(255) NOT NULL,</tspan></text>
+<text x="24" y="190" xml:space="preserve"><tspan fill="#a6e3a1">&gt;   `created_at` timestamp NULL,</tspan></text>
   </g>
 </svg>
